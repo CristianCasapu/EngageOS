@@ -2,10 +2,10 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
 ![PHP](https://img.shields.io/badge/PHP-8.4+-purple.svg)
 ![Laravel](https://img.shields.io/badge/Laravel-10.x-red.svg)
-![Node.js](https://img.shields.io/badge/Node.js-18.x+-green.svg)
+![OpenWA](https://img.shields.io/badge/OpenWA-Gateway-green.svg)
 ![License](https://img.shields.io/badge/license-Proprietary-orange.svg)
 
 **The Most Comprehensive WhatsApp Messaging Platform for Enterprise**
@@ -20,7 +20,7 @@
 
 ## 📖 About EngageOS
 
-**EngageOS** is a production-ready, enterprise-grade WhatsApp SaaS platform that enables businesses, marketing agencies, and service providers to manage sophisticated WhatsApp messaging campaigns at scale. Built with Laravel and Node.js, EngageOS offers complete multi-tenancy, advanced campaign automation, real-time analytics, and comprehensive API integration.
+**EngageOS** is a production-ready, enterprise-grade WhatsApp SaaS platform that enables businesses, marketing agencies, and service providers to manage sophisticated WhatsApp messaging campaigns at scale. Built on Laravel and powered by the self-hosted **[OpenWA](https://github.com/CristianCasapu/OpenWA)** WhatsApp gateway, EngageOS offers complete multi-tenancy, advanced campaign automation, real-time analytics, and comprehensive API integration.
 
 ### Why EngageOS?
 
@@ -28,10 +28,10 @@
 - ✅ **Production-Ready** - Battle-tested in real businesses
 - ✅ **Multi-Tenant** - Complete data isolation for multiple users/clients
 - ✅ **Enterprise-Grade Security** - GDPR compliant with role-based access control
-- ✅ **Modern Tech Stack** - Laravel 10, Node.js 18+, Redis, TailwindCSS
+- ✅ **Modern Tech Stack** - Laravel 10, OpenWA gateway, Redis, TailwindCSS
 - ✅ **Comprehensive API** - RESTful API for seamless integrations
-- ✅ **Real-Time Updates** - WebSocket support for live campaign monitoring
-- ✅ **Anti-Ban Protection** - Human-like behavior prevents WhatsApp blocking
+- ✅ **Real-Time Updates** - WebSocket support (Laravel Reverb) for live campaign monitoring
+- ✅ **Anti-Ban Protection** - Paced, human-like sending prevents WhatsApp blocking
 
 ### Perfect For
 
@@ -56,7 +56,7 @@
 - **Unlimited Message Templates** with variable substitution
 - **Template Categories** - Marketing, Sales, Support, Follow-up
 - **Live Preview** - See messages before sending
-- **Multi-Provider Support** - WhatsApp (Baileys) + BulkSMS
+- **WhatsApp Delivery** - All messaging flows through the self-hosted OpenWA gateway
 - **Smart Variables** - {{first_name}}, {{phone}}, {{email}}, custom fields
 - **Message Builder Service** - Auto header/footer, opt-out links
 
@@ -73,8 +73,8 @@
 - **Opt-Out Management** - GDPR-compliant subscription handling
 - **Preference Center** - Self-service subscription management
 - **Keyword Detection** - Auto-detect STOP, UNSUBSCRIBE commands
-- **Queue System** - Redis/BullMQ for background processing
-- **Anti-Ban Protection** - Random delays, typing indicators
+- **Queue System** - Redis-backed Laravel queues for background processing
+- **Anti-Ban Protection** - ~3s spacing with random jitter between messages, plus OpenWA's own anti-ban pacing
 
 ### 👤 Multi-Tenancy & User Management
 - **Multi-User System** - Super Admin and User roles
@@ -92,14 +92,14 @@
 - **Comprehensive Documentation** - API reference included
 - **Rate Limiting** - Abuse prevention built-in
 
-### 📱 WhatsApp Engine
-- **WhatsApp Web Integration** - Baileys 7.x (most stable)
-- **QR Code Authentication** - Simple phone scanning
-- **Persistent Sessions** - Database-backed (no file storage issues)
-- **Multi-Device Support** - Full WhatsApp multi-device support
-- **Auto Reconnection** - Handles disconnects gracefully
-- **Message Queue** - BullMQ for reliable message processing
-- **Media Support** - Images, videos, documents, audio
+### 📱 WhatsApp Gateway (OpenWA)
+- **Self-Hosted Gateway** - [OpenWA](https://github.com/CristianCasapu/OpenWA), a NestJS WhatsApp API gateway run as a Docker service
+- **Engine Choice** - whatsapp-web.js by default, Baileys optional (configured in OpenWA via `ENGINE_TYPE`)
+- **QR Code Authentication** - Pair by scanning a QR code straight from the EngageOS UI
+- **Server-Side REST Integration** - Laravel talks to the gateway with an `X-API-Key`; nothing is exposed to the browser
+- **Signed Webhooks** - Message sent/received/ack/failed and session status/QR events, verified with HMAC-SHA256
+- **Delivery & Read Receipts** - Ack events update campaign statistics in real time
+- **Built-In Dashboard** - OpenWA ships its own React dashboard for sessions, keys, and logs
 
 ### 📈 Analytics & Reporting
 - **Real-Time Dashboard** - Campaign metrics and KPIs
@@ -134,15 +134,14 @@
 
 ### ⚙️ System Configuration
 - **Centralized Settings** - Company info, branding, variables
-- **Provider Management** - Configure messaging providers
 - **Service Status Dashboard** - Monitor system health (Super Admin)
 - **Image Optimization** - Auto WebP/PNG conversion
 - **Custom Variables** - Define reusable template variables
 
 ### 🛠️ Developer Features
-- **Comprehensive Logging** - Laravel + Winston (Node.js)
+- **Comprehensive Logging** - Laravel logs plus OpenWA container logs
 - **Code Quality Tools** - Laravel Pint, PHPUnit
-- **Deployment Automation** - One-command production deployment
+- **One-Command Updates** - `update.sh` handles the full 8-step update
 - **Environment Validation** - Check requirements
 - **Caching Optimization** - Config, route, view caching
 
@@ -162,48 +161,36 @@
 - **TailwindCSS 3.x** - Utility-first CSS framework
 - **Alpine.js 3.x** - Lightweight JavaScript framework
 - **Livewire 3.x** - Server-side rendering with SPA experience
-- **Socket.IO Client** - Real-time WebSocket communication
+- **Laravel Echo + Reverb** - Real-time WebSocket updates
 
-### WhatsApp Engine
-- **Node.js 18.x+** - JavaScript runtime
-- **Baileys 7.x** - WhatsApp Web API integration
-- **Express.js** - Web server framework
-- **Socket.IO Server** - WebSocket server
-- **BullMQ** - Redis-based queue system
-- **Winston** - Logging library
-- **Axios** - HTTP client
+### WhatsApp Gateway (OpenWA)
+- **[OpenWA](https://github.com/CristianCasapu/OpenWA)** - Self-hosted NestJS WhatsApp API gateway
+- **Docker Compose** - Runs as a container via `docker-compose.openwa.yml`, bound to `127.0.0.1:2785`
+- **whatsapp-web.js / Baileys** - Selectable engine (`ENGINE_TYPE`, OpenWA-side setting)
+- **REST API + Webhooks** - `X-API-Key` auth outbound, HMAC-SHA256 signed events inbound
+- **React Dashboard** - Session, API key, and log management on the same port
 
 ### Infrastructure
 - **Nginx** or **Apache 2.4+** - Web server
-- **PM2** - Node.js process manager
+- **Docker + Docker Compose** - OpenWA gateway runtime
 - **Supervisor** - Laravel queue worker manager
-- **Systemd** - Service management
+- **Systemd** - Service management (Reverb, workers)
 - **Let's Encrypt** - SSL certificate automation
 
 ---
 
 ## 📚 Documentation
 
-### Deployment Guides
-- **[Quick Install - Debian 12](QUICK-INSTALL-DEBIAN12.md)** - ⚡ Fast setup for Debian 12 (15 minutes)
-- **[Production Deployment](PRODUCTION-DEPLOYMENT.md)** - Complete guide for VPS/dedicated servers
-- **[Apache2 Deployment](DEPLOYMENT-APACHE2.md)** - Quick setup for pre-configured Apache2 servers
-- **[cPanel Deployment](DEPLOYMENT-CPANEL.md)** - Deploy to shared hosting with cPanel
-- **[Deployment Checklist](DEPLOYMENT-CHECKLIST.md)** - Pre-deployment verification checklist
+### Deployment & Operations
+- **`docker-compose.openwa.yml`** - OpenWA gateway service; the file header documents setup, logs, and update commands
+- **`update.sh`** - 8-step production update script (pull, dependencies, assets, caches, migrations, Apache reload, service restarts)
+- **[Continuous Campaigns Deployment](deployment/CONTINUOUS_CAMPAIGNS_DEPLOYMENT.md)** - Running the continuous campaigns daemon
 
-### Service Management
-- **[Systemd Service Setup](SYSTEMD-SERVICE.md)** - WhatsApp Engine as systemd service with web management
-- **Installation Scripts**:
-  - `install-service.sh` - Install WhatsApp Engine as systemd service
-  - `install-supervisor.sh` - Install Supervisor for queue workers
+### Helper Scripts
+- `scripts/create-admin.php` - Create the first admin user
+- `scripts/reset-admin-password.php` - Reset an admin password
 
-### Feature Documentation
-- **[Website Features - English](website-features-en.md)** - Complete feature overview
-- **[Website Features - Romanian](website-features-ro.md)** - Prezentare completă funcționalități
-
-### Additional Resources
-- **[Debian 12 Notes](DEBIAN12-NOTES.md)** - Debian 12 specific commands and troubleshooting
-- **[PWA Setup](PWA_SETUP.md)** - Progressive Web App configuration
+> OpenWA has its own documentation in the [OpenWA repository](https://github.com/CristianCasapu/OpenWA), covering the dashboard, API keys, engines, and anti-ban settings.
 
 ---
 
@@ -213,7 +200,8 @@
 
 **Production Requirements:**
 - PHP 8.4+ with extensions (mysql, redis, mbstring, xml, curl, zip, gd, bcmath, intl)
-- Node.js 18.x+
+- Node.js 18.x+ (frontend asset builds)
+- Docker + Docker Compose (OpenWA gateway)
 - MySQL 8.0+ or MariaDB 10.5+
 - Redis 6.0+
 - Nginx 1.18+ or Apache 2.4+
@@ -224,6 +212,7 @@
 - PHP 8.4+
 - Composer 2.x
 - Node.js 18+ and npm
+- Docker + Docker Compose
 - MySQL/MariaDB database
 - Redis (optional for dev, file cache fallback available)
 - WhatsApp account for QR code authentication
@@ -284,21 +273,29 @@ npm run dev
 npm run build
 ```
 
-#### 7. Configure WhatsApp Engine
+#### 7. Set Up the OpenWA Gateway
 ```bash
-cd whatsapp-engine
+# Clone OpenWA next to this repo (the compose file builds from ../OpenWA)
+git clone https://github.com/CristianCasapu/OpenWA ../OpenWA
 
-# Install dependencies
-npm install
+# Build and start the gateway (bound to 127.0.0.1:2785)
+docker compose -f docker-compose.openwa.yml up -d --build
 
-# Create environment file
-cp .env.example .env
+# Read the bootstrap admin API key written on first boot
+docker compose -f docker-compose.openwa.yml exec openwa cat /app/data/.api-key
+```
 
-# Configure WhatsApp Engine
-# Edit .env with your settings:
-# WHATSAPP_ENGINE_PORT=3000
-# APP_URL=http://localhost:8000
-# NODE_ENV=development
+Add the OpenWA settings to the Laravel `.env`:
+```env
+OPENWA_BASE_URL=http://127.0.0.1:2785
+OPENWA_API_KEY=<key from the command above>
+OPENWA_SESSION_NAME=engageos
+OPENWA_WEBHOOK_SECRET=<random shared secret>
+```
+
+Then provision the session and register the webhook (idempotent, safe to re-run):
+```bash
+php artisan openwa:setup
 ```
 
 #### 8. Start Services
@@ -311,128 +308,79 @@ php artisan serve
 # Terminal 2: Queue Worker
 php artisan queue:work
 
-# Terminal 3: WhatsApp Engine
-cd whatsapp-engine
-npm start
+# Terminal 3: Reverb (real-time updates)
+php artisan reverb:start
 ```
+The OpenWA gateway is already running in Docker from step 7.
 
 **Production Mode:**
 ```bash
-# Use PM2 for WhatsApp Engine
-pm2 start whatsapp-engine/ecosystem.config.js --env production
-
-# Use Supervisor for Queue Workers
-# See: install-supervisor.sh
-
+# Supervisor for Queue Workers, systemd for Reverb
 # Configure web server (Nginx/Apache)
-# See deployment guides
+
+# OpenWA runs under Docker with restart: unless-stopped
+docker compose -f docker-compose.openwa.yml up -d
 ```
 
 #### 9. Access Application
 - **Web Interface**: http://localhost:8000
-- **WhatsApp Engine Status**: http://localhost:3000/status
-- **Login**: Create first user via database or use seeders
+- **OpenWA Dashboard**: http://127.0.0.1:2785 (local access only)
+- **Login**: Create first user via `scripts/create-admin.php` or seeders
 
 #### 10. Connect WhatsApp
-1. Visit WhatsApp Connection page in the application
-2. Scan QR code with your WhatsApp mobile app
-3. Wait for connection confirmation
-4. Start sending messages!
+1. Visit the WhatsApp Connection page in the application
+2. The page polls Laravel, which fetches the current QR code from OpenWA
+3. Scan the QR code with your WhatsApp mobile app
+4. Wait for connection confirmation and start sending messages!
 
 ---
 
 ## 🚀 Deployment Options
 
-### Option 1: Full Production Deployment (Recommended)
+### Option 1: Production VPS / Dedicated Server (Recommended)
 **Best for:** VPS, Dedicated Servers, Cloud Instances (AWS, DigitalOcean, Linode, etc.)
-
-Complete automated setup including all services, SSL, security hardening.
-
-```bash
-sudo ./deploy-production.sh
-```
-
-📖 **Guide:** [PRODUCTION-DEPLOYMENT.md](PRODUCTION-DEPLOYMENT.md)
-
-**Features:**
-- Automated Nginx/Apache configuration
-- Let's Encrypt SSL certificate
-- Systemd service for WhatsApp Engine
-- Supervisor for queue workers
-- Database setup and migration
-- Redis configuration
-- Security hardening
-
----
-
-### Option 2: Quick Install - Debian 12
-**Best for:** Fresh Debian 12 servers
-
-Fast setup script that installs everything in ~15 minutes.
-
-```bash
-git clone <repository-url> engageos
-cd engageos
-chmod +x setup-debian12.sh
-sudo ./setup-debian12.sh
-```
-
-📖 **Guide:** [QUICK-INSTALL-DEBIAN12.md](QUICK-INSTALL-DEBIAN12.md)
-
----
-
-### Option 3: cPanel Shared Hosting
-**Best for:** Shared hosting accounts with cPanel and SSH access
-
-Step-by-step guide for deploying to cPanel environments.
-
-📖 **Guide:** [DEPLOYMENT-CPANEL.md](DEPLOYMENT-CPANEL.md)
-
-**Requirements:**
-- cPanel with SSH access
-- Node.js support (via Node.js Selector or custom)
-- MySQL database
-- SSL certificate
-
----
-
-### Option 4: Pre-Configured Apache2 Server
-**Best for:** Servers with Apache2, PHP-FPM, MariaDB, Redis already installed
-
-Quick deployment when infrastructure is already in place.
 
 ```bash
 # Clone and install
 git clone <repository-url> engageos
 cd engageos
 composer install --no-dev --optimize-autoloader
+npm install && npm run build
 
 # Configure .env and database
 cp .env.example .env
 php artisan key:generate
 php artisan migrate
 
-# Configure Apache VirtualHost
-# See: DEPLOYMENT-APACHE2.md
+# Configure Apache/Nginx VirtualHost for the Laravel app
+# Supervisor for queue workers, systemd for Reverb
 
-# Start WhatsApp Engine
-cd whatsapp-engine
-npm install
-pm2 start ecosystem.config.js --env production
+# Start the OpenWA gateway
+git clone https://github.com/CristianCasapu/OpenWA ../OpenWA
+docker compose -f docker-compose.openwa.yml up -d --build
+docker compose -f docker-compose.openwa.yml exec openwa cat /app/data/.api-key
+# Set OPENWA_* in .env, then:
+php artisan openwa:setup
 ```
 
-📖 **Guide:** [DEPLOYMENT-APACHE2.md](DEPLOYMENT-APACHE2.md)
+**Notes:**
+- OpenWA is bound to `127.0.0.1:2785` — it is never exposed publicly, and no web server proxy rules are needed for it
+- Laravel and OpenWA communicate server-side only (REST + signed webhooks)
 
 ---
 
-### Option 5: Docker (Coming Soon)
-**Best for:** Containerized deployments
-
-Docker Compose configuration for easy deployment.
+### Option 2: Updating an Existing Installation
 
 ```bash
-# Coming soon
-docker-compose up -d
+sudo ./update.sh
+```
+
+The script runs 8 steps: git pull, Composer dependencies, npm dependencies, asset build, Laravel optimizations, migrations, Apache reload, and service restarts.
+
+OpenWA is updated independently of the app:
+```bash
+git -C ../OpenWA pull
+docker compose -f docker-compose.openwa.yml up -d --build
 ```
 
 ---
@@ -463,8 +411,10 @@ docker-compose up -d
 
 5. **Monitor Progress**
    - View real-time statistics
-   - Track sent, delivered, read status
+   - Track sent, delivered, read status (via OpenWA ack webhooks)
    - Monitor replies and engagement
+
+Messages are sent one at a time through the OpenWA gateway with roughly 3 seconds plus random jitter between sends (`OPENWA_SEND_DELAY_MS`), keeping the pace human-like.
 
 ### Managing Contacts
 
@@ -497,6 +447,8 @@ docker-compose up -d
    - Send once per contact option
 4. Activate rule
 5. Test by sending keyword to your WhatsApp
+
+Inbound messages arrive through the OpenWA webhook (`message.received`), so auto-replies and keyword detection work without any extra setup.
 
 ### Managing Opt-Outs (GDPR Compliance)
 
@@ -571,22 +523,21 @@ QUEUE_CONNECTION=redis
 CACHE_DRIVER=redis
 SESSION_DRIVER=redis
 
-WHATSAPP_ENGINE_API_URL=http://localhost:3000
+# OpenWA gateway (see config/openwa.php)
+OPENWA_BASE_URL=http://127.0.0.1:2785
+OPENWA_API_KEY=your-openwa-api-key
+OPENWA_SESSION_NAME=engageos
+OPENWA_WEBHOOK_SECRET=your-shared-webhook-secret
+OPENWA_TIMEOUT=30
+OPENWA_SEND_DELAY_MS=3000
 ```
 
-**WhatsApp Engine (whatsapp-engine/.env):**
-```env
-WHATSAPP_ENGINE_PORT=3000
-APP_URL=http://localhost:8000
-WEBHOOK_URL=http://localhost:8000/webhook/whatsapp
-NODE_ENV=production
-
-# Database connection (for session storage)
-DB_HOST=localhost
-DB_USER=db_user
-DB_PASSWORD=db_password
-DB_NAME=engageos
-```
+**How the integration works:**
+- Laravel calls OpenWA server-side via `app/Services/OpenWA/OpenWAClient.php`, authenticating with `X-API-Key`
+- OpenWA posts events to `POST /webhook/openwa`, signed with HMAC-SHA256 (`X-OpenWA-Signature`, verified against `OPENWA_WEBHOOK_SECRET`)
+- Handled events: `message.received`, `message.sent`, `message.ack` (delivered/read/failed), `message.failed`, `session.status`, `session.qr`
+- `php artisan openwa:setup` provisions the session and registers the webhook — idempotent, safe to re-run after config changes
+- Gateway-side options (engine choice via `ENGINE_TYPE`, anti-ban pacing, storage) are configured in OpenWA itself, not in EngageOS
 
 ### System Settings
 
@@ -595,7 +546,6 @@ Configure via web interface:
 - **Branding** - Logo, favicon (auto-optimized)
 - **Message Settings** - Header/footer templates
 - **System Variables** - Reusable template variables
-- **Provider Settings** - BulkSMS credentials, default provider
 
 ---
 
@@ -614,6 +564,8 @@ Configure via web interface:
 - ✅ **Rate Limiting** - API and login attempt limits
 - ✅ **Input Validation** - All user input sanitized
 - ✅ **Secure Sessions** - HttpOnly, Secure, SameSite cookies
+- ✅ **Signed Webhooks** - OpenWA events verified with HMAC-SHA256
+- ✅ **Localhost-Only Gateway** - OpenWA bound to 127.0.0.1, never internet-facing
 
 ### Security Best Practices
 
@@ -636,6 +588,9 @@ REDIS_PASSWORD=strong_random_password
 # Use strong database credentials
 DB_PASSWORD=strong_random_password
 
+# Set a strong OpenWA webhook secret
+OPENWA_WEBHOOK_SECRET=strong_random_secret
+
 # Restrict file permissions
 chmod -R 755 storage bootstrap/cache
 chown -R www-data:www-data storage bootstrap/cache
@@ -643,7 +598,7 @@ chown -R www-data:www-data storage bootstrap/cache
 
 **Firewall Configuration:**
 ```bash
-# Allow only necessary ports
+# Allow only necessary ports (OpenWA's 2785 stays localhost-only)
 ufw allow 22/tcp   # SSH
 ufw allow 80/tcp   # HTTP
 ufw allow 443/tcp  # HTTPS
@@ -672,7 +627,7 @@ php artisan test --coverage
 - [ ] Add test contacts
 - [ ] Connect WhatsApp via QR code
 - [ ] Send test messages
-- [ ] Verify delivery status updates
+- [ ] Verify delivery status updates (ack webhooks)
 - [ ] Reply from phone and check reply tracking
 - [ ] Test auto-reply functionality
 - [ ] Test opt-out detection
@@ -692,11 +647,12 @@ php artisan test --coverage
 # Check queue workers
 php artisan queue:work --status
 
-# Check WhatsApp Engine status
-pm2 status
+# Check OpenWA gateway status
+docker compose -f docker-compose.openwa.yml ps
 
 # Monitor logs
 tail -f storage/logs/laravel.log
+docker compose -f docker-compose.openwa.yml logs -f
 ```
 
 **Weekly:**
@@ -717,15 +673,26 @@ mysqldump -u user -p engageos > backup_$(date +%Y%m%d).sql
 # Update dependencies (carefully)
 composer update
 npm update
+
+# Update OpenWA
+git -C ../OpenWA pull
+docker compose -f docker-compose.openwa.yml up -d --build
 ```
 
 ### Troubleshooting
 
 **WhatsApp Disconnects:**
-1. Check PM2 status: `pm2 status`
-2. Check logs: `pm2 logs whatsapp-engine`
-3. Restart engine: `pm2 restart whatsapp-engine`
-4. Re-scan QR code if needed
+1. Check the container: `docker compose -f docker-compose.openwa.yml ps`
+2. Check logs: `docker compose -f docker-compose.openwa.yml logs -f openwa`
+3. Inspect the session in the OpenWA dashboard: http://127.0.0.1:2785
+4. Restart the gateway: `docker compose -f docker-compose.openwa.yml restart`
+5. Re-scan the QR code from the WhatsApp Connection page if needed
+
+**Webhooks Not Arriving (no receipts / no inbound replies):**
+1. Verify `OPENWA_WEBHOOK_SECRET` matches the registered webhook
+2. Re-run `php artisan openwa:setup` (idempotent) to re-register the webhook
+3. Make sure `APP_URL` is reachable from inside the OpenWA container
+4. Check Laravel logs for signature verification failures
 
 **Queue Not Processing:**
 1. Check queue worker: `systemctl status laravel-worker`
@@ -822,6 +789,8 @@ Add to crontab:
 0 2 * * * /path/to/backup.sh
 ```
 
+> The OpenWA session lives in the `openwa-data` Docker volume — include it in backups if you want to avoid re-pairing after a full restore.
+
 ### Restore from Backup
 ```bash
 # Restore database
@@ -842,7 +811,7 @@ chown -R www-data:www-data /var/www/engageos/storage
 engageos/
 ├── app/
 │   ├── Http/
-│   │   ├── Controllers/        # API & Web controllers
+│   │   ├── Controllers/        # API & Web controllers (incl. OpenWA webhook)
 │   │   ├── Middleware/         # Authentication, CORS, etc.
 │   │   └── Requests/           # Form request validation
 │   ├── Livewire/              # Frontend Livewire components
@@ -851,29 +820,34 @@ engageos/
 │   │   ├── CampaignService.php
 │   │   ├── ContactService.php
 │   │   ├── WhatsAppService.php
-│   │   └── MessageBuilderService.php
+│   │   ├── MessageBuilderService.php
+│   │   └── OpenWA/
+│   │       └── OpenWAClient.php  # REST client for the OpenWA gateway
 │   └── Traits/                # Reusable traits
 ├── bootstrap/
 ├── config/                    # Application configuration
+│   └── openwa.php            # OpenWA gateway settings
 ├── database/
 │   ├── migrations/           # Database schema
 │   ├── seeders/             # Database seeders
 │   └── factories/           # Model factories
+├── deployment/               # Continuous campaigns daemon setup
 ├── public/                   # Web root
 │   ├── index.php
 │   ├── manifest.json        # PWA manifest
 │   └── pwa/                 # PWA assets
 ├── resources/
 │   ├── css/                 # TailwindCSS styles
-│   ├── js/                  # Alpine.js, JavaScript
+│   ├── js/                  # Alpine.js, Echo/Reverb
 │   └── views/               # Blade templates
 │       ├── layouts/
 │       ├── livewire/
 │       └── auth/
 ├── routes/
-│   ├── web.php             # Web routes
+│   ├── web.php             # Web routes (incl. /webhook/openwa)
 │   ├── api.php             # API routes
 │   └── console.php         # Artisan commands
+├── scripts/                 # Admin helper scripts
 ├── storage/
 │   ├── app/                # Application files
 │   ├── framework/          # Framework cache
@@ -881,19 +855,16 @@ engageos/
 ├── tests/
 │   ├── Feature/            # Feature tests
 │   └── Unit/               # Unit tests
-├── whatsapp-engine/        # Node.js WhatsApp integration
-│   ├── index.js            # Main server file
-│   ├── routes/             # Express routes
-│   ├── services/           # Business logic
-│   ├── utils/              # Utilities
-│   ├── package.json
-│   └── ecosystem.config.js # PM2 configuration
+├── docker-compose.openwa.yml  # OpenWA gateway service (built from ../OpenWA)
+├── update.sh               # 8-step production update script
 ├── .env.example            # Environment template
 ├── composer.json           # PHP dependencies
-├── package.json            # Node dependencies
+├── package.json            # Node dependencies (frontend build)
 ├── artisan                 # Laravel CLI
 └── README.md              # This file
 ```
+
+The OpenWA gateway itself lives in a sibling checkout (`../OpenWA`) and is built into a Docker image by `docker-compose.openwa.yml`.
 
 ---
 
@@ -911,10 +882,10 @@ engageos/
 When reporting bugs, please include:
 1. EngageOS version
 2. PHP version
-3. Node.js version
+3. OpenWA version / engine (`ENGINE_TYPE`)
 4. Operating system
 5. Steps to reproduce
-6. Error messages and logs
+6. Error messages and logs (Laravel + OpenWA container)
 7. Expected vs actual behavior
 
 ---
@@ -938,13 +909,11 @@ Contact for licensing information.
 EngageOS is built with amazing open-source technologies:
 
 - **[Laravel](https://laravel.com/)** - The PHP framework for web artisans
-- **[Baileys](https://github.com/WhiskeySockets/Baileys)** - WhatsApp Web API library
+- **[OpenWA](https://github.com/CristianCasapu/OpenWA)** - Self-hosted WhatsApp API gateway powering all messaging
 - **[TailwindCSS](https://tailwindcss.com/)** - Utility-first CSS framework
 - **[Livewire](https://laravel-livewire.com/)** - Full-stack framework for Laravel
 - **[Alpine.js](https://alpinejs.dev/)** - Lightweight JavaScript framework
 - **[Redis](https://redis.io/)** - In-memory data structure store
-- **[BullMQ](https://docs.bullmq.io/)** - Premium message queue for Node.js
-- **[PM2](https://pm2.keymetrics.io/)** - Node.js process manager
 
 Special thanks to the open-source community for making projects like EngageOS possible.
 
@@ -974,12 +943,12 @@ Special thanks to the open-source community for making projects like EngageOS po
 
 **EngageOS** - Enterprise WhatsApp Messaging Platform
 
-Built with ❤️ using Laravel & Node.js by [Cristian Casapu](https://CristianCasapu.ro)
+Built with ❤️ using Laravel & OpenWA by [Cristian Casapu](https://CristianCasapu.ro)
 
 [Get Started](#-quick-start) • [Documentation](#-documentation) • [Support](#-support--community)
 
 ---
 
-*Last Updated: November 2025 • Version 1.0.0*
+*Last Updated: August 2026 • Version 2.0.0*
 
 </div>

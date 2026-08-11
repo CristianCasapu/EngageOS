@@ -102,15 +102,13 @@ Serviciul nostru de construire mesaje gestionează complexitatea:
 - Suport emoji în tot
 - Formatare mesaje multi-linie
 
-**Suport Multi-Furnizor**
-Nu ești blocat la un singur furnizor:
-- **WhatsApp via Baileys**: Integrare directă WhatsApp Web
-- **Integrare BulkSMS**: Fallback SMS sau alternativă
-- Configurare specifică furnizor per utilizator
-- Urmărire sold pentru furnizori plătiți
-- Urmărire cost per mesaj
-- Capabilitate failover automat furnizor
-- Selecție furnizor implicit
+**Integrare Gateway OpenWA**
+Un singur canal WhatsApp fiabil, self-hosted:
+- **WhatsApp via OpenWA**: gateway API WhatsApp open-source, self-hosted
+- Integrare REST server-side securizată cu chei API
+- Alegerea engine-ului în OpenWA (whatsapp-web.js sau Baileys)
+- Webhook-uri semnate pentru confirmări și răspunsuri
+- Fără taxe de mesagerie către terți și fără lock-in
 
 ---
 
@@ -294,53 +292,41 @@ Integrare agenți AI și automatizare:
 
 ---
 
-### 7. Motor WhatsApp (Minune Tehnică)
+### 7. Gateway OpenWA (Motor WhatsApp)
 
-**Integrare WhatsApp Web**
-Motorul nostru Node.js este dovedit în producție:
-- **Autentificare Cod QR**: Scanare simplă telefon pentru conexiune
-- **Sesiuni Persistente**: Stocare sesiuni în bază de date (fără probleme stocare fișiere)
-- **Suport Multi-Dispozitiv**: Suport complet multi-dispozitiv WhatsApp
-- **Stare Conexiune în Timp Real**: Știi mereu starea conexiunii
+**Gateway API WhatsApp Self-Hosted**
+EngageOS integrează [OpenWA](https://github.com/CristianCasapu/OpenWA), un gateway WhatsApp open-source construit pe NestJS, rulat ca serviciu Docker extern:
+- **Autentificare Cod QR**: Scanare simplă cu telefonul, direct din interfața EngageOS
+- **Sesiuni Persistente**: Starea sesiunii stocată în volumul de date OpenWA
 - **Reconectare Automată**: Gestionează deconectările elegant
-- **Limitare Încercări Conexiune**: Previne ban de la conexiuni excesive
-- **Reconectare Manuală**: Forțează reconectarea când este necesar
-- **Logout Curat**: Endpoint-uri corespunzătoare de deconectare și logout
-- **Gestionare Versiune WhatsApp**: Actualizări automate versiune
-- **Baileys 7.x**: Cea mai recentă, cea mai stabilă bibliotecă WhatsApp Web
+- **Stare Conexiune în Timp Real**: Stare și QR interogate server-side de Laravel
+- **Logout Curat**: Deconectare corectă din panoul de administrare
+- **Alegerea Engine-ului**: whatsapp-web.js (implicit) sau Baileys, selectat în OpenWA via `ENGINE_TYPE`
+- **Provizionare cu O Comandă**: `php artisan openwa:setup` creează sesiunea și înregistrează webhook-ul
+- **Dashboard Inclus**: OpenWA vine cu propriul dashboard de administrare pentru gestionare la nivel jos
 
 **Protecție Anti-Ban**
 Comportament asemănător omului previne blocarea:
-- **Întârzieri Aleatorii**: 3-8 secunde între mesaje (configurabil)
-- **Simulare Indicator Tastare**: Simulare tastare 2 secunde
-- **Actualizări Prezență**: Keep-alive previne timeout 24 ore
-- **Rate Limiting**: 30 cereri/minut pe endpoint trimitere
+- **Trimitere Ritmată**: ~3 secunde plus jitter aleatoriu între mesajele de campanie (configurabil)
+- **Pacing Suplimentar în Gateway**: controale opționale de pacing și warm-up în OpenWA
 - **Validare Mesaje**: Asigură format corect mesaj
-- **Verificare Număr Telefon**: Validează înainte de trimitere
+- **Verificare Număr Telefon**: Validează numerele pe WhatsApp înainte de trimitere
+- **Verificări Sănătate Conexiune**: Sănătatea gateway-ului monitorizată din pagina Stare Servicii
 
-**Sistem Coadă Mesaje**
-Procesare mesaje de nivel enterprise:
-- **Coadă Bazată pe Redis (BullMQ)**: Coadă fiabilă, persistentă
-- **Dashboard Statistici Coadă**: Monitorizează sănătatea cozii
-- **Urmărire Stare Job**: Vezi starea fiecărui mesaj
-- **Retry Job Eșuat**: Retry automat cu backoff exponențial
-- **Prioritate Coadă**: Mesaje de prioritate înaltă primele
-- **Coadă în Bloc**: Pune în coadă mii de mesaje instantaneu
-- **Pauză/Reluare Coadă**: Controlează fluxul de mesaje
-- **Monitorizare Worker**: Urmărește procesele worker
-- **Procesare Concurentă**: Mai mulți workers pentru viteză
+**Webhook-uri Semnate & Urmărire Livrare**
+Procesare evenimente de nivel enterprise:
+- **Semnături HMAC-SHA256**: Fiecare webhook verificat înainte de procesare
+- **Confirmări Livrare & Citire**: Evenimentele `message.ack` trec mesajele de campanie pe livrat/citit
+- **Raportare Eșecuri**: Trimiterile eșuate sunt marcate cu eroarea gateway-ului
+- **Răspunsuri Primite**: Evenimentele `message.received` alimentează răspunsurile, auto-reply și opt-out
+- **Retry cu Backoff**: OpenWA reîncearcă automat livrările de webhook eșuate
+- **Chei de Idempotență**: Livrările duplicate sunt detectate și ignorate
 
 **Istoric Mesaje & Conversații**
 Urmărește toate interacțiunile:
-- **Stocare Mesaje în Bază de Date**: Nu pierde niciodată istoricul mesajelor
-- **Listă Conversații**: Vezi toate contactele cu mesaje recente
-- **Istoric Mesaje per Contact**: Vizualizare completă conversație
-- **Caching Info Contact**: Nume, avatare, mesaje status
-- **Urmărire Număr Necitite**: Urmărește mesajele necitite
-- **Afișare Ultimul Mesaj**: Vezi cel mai recent mesaj în listă
-- **Preluare Poză Profil Contact**: Preluare automată fotografie contact
-- **Preluare Mesaj Status**: Vezi statusul contactului
-- **Suport Chat Grup**: Gestionează conversații grup (opțional)
+- **Stocare Răspunsuri în Bază de Date**: Nu pierde niciodată un răspuns primit
+- **Legare Răspunsuri de Campanii**: Răspunsurile sunt asociate campaniei care le-a generat
+- **Acces Istoric Conversații**: Istoricul conversațiilor preluat prin API-ul gateway-ului
 - **Detecție Tip Mesaj**: Text, Imagine, Video, Audio, Document, etc.
 
 **Suport Mesaje Media**
@@ -349,10 +335,8 @@ Mai mult decât doar text:
 - **Mesaje Document**: Trimite PDF-uri, documente Word, etc.
 - **Mesaje Audio**: Note vocale și fișiere audio
 - **Mesaje Video**: Trimite video-uri cu descriere
-- **Suport URL Media**: Suport hosting extern
 - **Validare Tip Media**: Asigură format corect
 - **Suport Descriere**: Adaugă context la mesajele media
-- **PTT (Push-to-Talk)**: Suport format notă vocală
 
 ---
 
@@ -370,20 +354,17 @@ Control centralizat al platformei:
 - **Organizare Categorii**: Grupuri de setări organizate
 - **Optimizare Imagini**: Procesare automată imagini
 
-**Setări Furnizor**
-Configurare furnizori mesagerie:
-- **Credențiale BulkSMS**: Gestionare username și parolă
-- **Activare Furnizor**: Activează/dezactivează furnizori
-- **Selecție Furnizor Implicit**: Alege furnizorul primar
-- **Urmărire Sold**: Monitorizează soldul contului
-- **Monitorizare Cotă**: Urmărește limitele de mesaje
-- **Timestamp Ultima Verificare**: Vezi când a fost actualizat soldul
-- **Testare Conexiune**: Verifică credențialele furnizorului
-- **Refresh Sold**: Actualizează soldul la cerere
+**Setări Conexiune OpenWA**
+Configurarea gateway-ului WhatsApp prin variabile de mediu:
+- **URL Gateway & Cheie API**: `OPENWA_BASE_URL` / `OPENWA_API_KEY`
+- **Sesiune Denumită**: `OPENWA_SESSION_NAME` identifică această instalare
+- **Secret Webhook**: `OPENWA_WEBHOOK_SECRET` protejează evenimentele primite
+- **Ritm Trimitere**: `OPENWA_SEND_DELAY_MS` controlează distanțarea mesajelor de campanie
+- **Setup cu O Comandă**: `php artisan openwa:setup` validează și provizionează totul
 
 **Dashboard Stare Servicii (Super Admin)**
 Monitorizează sănătatea platformei:
-- **Stare Motor WhatsApp**: Stare conexiune, uptime
+- **Sănătate Gateway OpenWA**: Accesibilitate, versiune, stare sesiune
 - **Stare Aplicație Laravel**: Sănătate server
 - **Conectivitate Bază de Date**: Verificare conexiune MySQL/MariaDB
 - **Conectivitate Redis**: Verificare sistem cache și coadă
@@ -477,10 +458,9 @@ Date live fără reîncărcări pagină:
 - **Notificări Mesaje Noi**: Alerte răspuns instant
 - **Actualizări Număr Răspunsuri**: Urmărire engagement în timp real
 - **Actualizări Badge Stare**: Schimbări vizuale stare
-- **Integrare Socket.IO**: Suport WebSocket gata
 - **Notificări Browser**: Notificări desktop (planificat)
 - **Evenimente Livewire**: Actualizări UI reactive
-- **Fallback Polling**: Funcționează chiar fără WebSocket-uri
+- **Polling Eficient**: Actualizări live cu caching server-side
 
 **Căutare & Filtrare Avansată**
 Găsește orice, instant:
@@ -528,7 +508,7 @@ Datele tale sunt în siguranță:
 **Rate Limiting & Prevenire Abuz**
 Protecție împotriva atacurilor:
 - **Rate Limiting API**: 60 cereri/minut implicit
-- **Rate Limiting Motor WhatsApp**: 30 cereri/minut
+- **Trimitere WhatsApp Ritmată**: distanțare cu jitter, plus pacing opțional în gateway-ul OpenWA
 - **Limitare Încercări Login**: Previne atacuri brute force
 - **Backoff Retry Webhook**: Întârzieri retry exponențiale
 - **Rate Limiting Coadă**: Previne inundarea cozii
@@ -553,7 +533,7 @@ Respectă confidențialitatea, evită amenzile:
 **Logging Complet**
 Debug orice, oricând:
 - **Log-uri Aplicație**: Laravel log facade
-- **Log-uri Motor WhatsApp**: Logger Winston în Node.js
+- **Log-uri Gateway OpenWA**: Log-uri structurate via Docker (`docker compose logs`)
 - **Log-uri Erori**: Urmărire automată erori
 - **Log-uri Debug**: Informații detaliate debugging
 - **Log-uri Info**: Logging informații generale
@@ -584,7 +564,7 @@ De la cod la producție în minute:
 - **Scripturi Instalare Servicii**: Setup Systemd inclus
 - **Config Serviciu Systemd**: Servicii gata de producție
 - **Setup Queue Worker Supervisor**: Procesare joburi fundal
-- **Gestionare Proces PM2**: Control proces Node.js
+- **Docker Compose pentru OpenWA**: Gestionarea containerului gateway
 - **Automatizare Certificat SSL**: Integrare Let's Encrypt
 - **Configurații Server Web**: Șabloane Nginx și Apache
 - **Scripturi Backup**: Soluție backup automată
@@ -606,20 +586,17 @@ De la cod la producție în minute:
 - **Alpine.js 3.x** - JavaScript ușor
 - **Livewire 3.x** - Randare server-side cu feel de SPA
 - **Chart.js** - Vizualizare analiză (gata)
-- **Client Socket.IO** - Actualizări în timp real
 
-### Stack Motor WhatsApp
-- **Node.js 18.x+** - Runtime JavaScript
-- **Baileys 7.x** - API WhatsApp Web (cea mai stabilă bibliotecă)
-- **Express.js** - Framework web
-- **Server Socket.IO** - Comunicare în timp real
-- **BullMQ** - Sistem coadă bazat pe Redis
-- **Winston** - Logging profesional
-- **Axios** - Client HTTP
+### Stack Gateway WhatsApp (OpenWA)
+- **OpenWA** - Gateway API WhatsApp open-source, self-hosted
+- **NestJS / TypeScript** - Framework server modern, tipat
+- **whatsapp-web.js sau Baileys** - Engine selectabil (`ENGINE_TYPE`)
+- **Docker** - Deployment containerizat (`docker-compose.openwa.yml`)
+- **API REST + Webhook-uri Semnate** - Integrare server-la-server cu Laravel
 
 ### Infrastructură
 - **Nginx sau Apache** - Server web
-- **PM2** - Manager proces Node.js
+- **Docker Compose** - Container gateway OpenWA
 - **Supervisor** - Manager queue worker Laravel
 - **Systemd** - Gestionare servicii
 - **Let's Encrypt** - Certificate SSL gratuite
@@ -638,7 +615,7 @@ De la cod la producție în minute:
 
 ### Cod Sursă
 - **Aplicație Laravel Completă**: Tot codul PHP, fără criptare
-- **Motor Node.js Complet**: Cod integrare WhatsApp
+- **Setup Gateway OpenWA**: Fișier Docker Compose și comandă de provizionare
 - **Toate Asset-urile Frontend**: TailwindCSS, Alpine.js, JavaScript
 - **Migrări Bază Date**: Schemă completă inclusă
 - **Seeders**: Date sample pentru testare
@@ -651,11 +628,10 @@ De la cod la producție în minute:
 - **Ghid Dezvoltator**: Structură cod și arhitectură
 
 ### Fișiere Configurare
-- **Șabloane Mediu**: .env.example pentru Laravel și Node.js
+- **Șabloane Mediu**: .env.example cu setările OpenWA
 - **Configurații Server Web**: Exemple Nginx și Apache
 - **Configurații Servicii**: Șabloane Systemd și Supervisor
-- **Fișier Ecosistem PM2**: Config proces Node.js
-- **Docker Compose**: Orchestrare containere (opțional)
+- **Docker Compose**: Orchestrare gateway OpenWA
 
 ### Scripturi
 - **Scripturi Deployment**: Deployment automat
@@ -742,7 +718,7 @@ Peste 100 de funcționalități în 14 module înseamnă că nu cumperi un punct
 ### 3. Tehnologie Modernă
 Construită cu cele mai noi, cele mai stabile tehnologii:
 - Laravel 10.x (PHP 8.4)
-- Baileys 7.x (cea mai stabilă bibliotecă WhatsApp)
+- Gateway OpenWA (engine whatsapp-web.js sau Baileys)
 - TailwindCSS 3.x (UI modernă)
 - Node.js 18.x+ (LTS)
 - Redis 6.0+ (standard industrie)
@@ -783,7 +759,7 @@ Tot ce ai nevoie pentru a reuși:
 ### 8. Întreținere Activă
 Codebase actualizat recent:
 - Versiune Laravel cea mai recentă
-- Bibliotecă Baileys cea mai recentă
+- Gateway OpenWA cel mai recent
 - Patch-uri securitate aplicate
 - Bug fix-uri incluse
 - Optimizări performanță
@@ -938,6 +914,6 @@ Fie că ești un antreprenor care dorește să intre pe piața de mesagerie What
 
 *Această platformă este întreținută activ și recent actualizată. Achiziția include cod sursă complet, documentație și ghiduri de instalare. Suport și personalizare opționale disponibile.*
 
-**Ultima Actualizare**: Noiembrie 2025
-**Versiune**: 1.0 (Bazat pe Laravel 10.x, Baileys 7.x)
+**Ultima Actualizare**: August 2026
+**Versiune**: 2.0 (Bazat pe Laravel 10.x, gateway OpenWA)
 **Licență**: Disponibilă pentru achiziție cu diverse opțiuni de licențiere
