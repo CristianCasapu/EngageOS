@@ -102,15 +102,13 @@ Our message builder service handles the complexity:
 - Emoji support throughout
 - Multi-line message formatting
 
-**Multi-Provider Support**
-Not locked into one provider:
-- **WhatsApp via Baileys**: Direct WhatsApp Web integration
-- **BulkSMS Integration**: SMS fallback or alternative
-- Provider-specific configuration per user
-- Balance tracking for paid providers
-- Cost per message tracking
-- Automatic provider failover capability
-- Default provider selection
+**OpenWA Gateway Integration**
+One reliable, self-hosted WhatsApp channel:
+- **WhatsApp via OpenWA**: open-source, self-hosted WhatsApp API gateway
+- Server-side REST integration secured with API keys
+- Engine choice inside OpenWA (whatsapp-web.js or Baileys)
+- Signed webhooks for receipts and replies
+- No third-party messaging fees or lock-in
 
 ---
 
@@ -294,53 +292,41 @@ AI agent and automation integration:
 
 ---
 
-### 7. WhatsApp Engine (Technical Marvel)
+### 7. OpenWA Gateway (WhatsApp Engine)
 
-**WhatsApp Web Integration**
-Our Node.js engine is production-proven:
-- **QR Code Authentication**: Simple phone scanning for connection
-- **Persistent Sessions**: Database-backed session storage (no file storage issues)
-- **Multi-Device Support**: Full WhatsApp multi-device support
-- **Real-Time Connection Status**: Always know your connection state
+**Self-Hosted WhatsApp API Gateway**
+EngageOS integrates [OpenWA](https://github.com/CristianCasapu/OpenWA), an open-source NestJS WhatsApp gateway, run as an external Docker service:
+- **QR Code Authentication**: Simple phone scanning, straight from the EngageOS UI
+- **Persistent Sessions**: Session state stored in the OpenWA data volume
 - **Automatic Reconnection**: Handles disconnects gracefully
-- **Connection Attempt Limiting**: Prevents ban from excessive connections
-- **Manual Reconnect**: Force reconnection when needed
-- **Clean Logout**: Proper disconnect and logout endpoints
-- **WhatsApp Version Management**: Automatic version updates
-- **Baileys 7.x**: Latest, most stable WhatsApp Web library
+- **Real-Time Connection Status**: Status and QR polled server-side by Laravel
+- **Clean Logout**: Proper disconnect from the admin panel
+- **Engine Choice**: whatsapp-web.js (default) or Baileys, selected in OpenWA via `ENGINE_TYPE`
+- **One-Command Provisioning**: `php artisan openwa:setup` creates the session and registers the webhook
+- **Bundled Dashboard**: OpenWA ships its own admin dashboard for low-level management
 
 **Anti-Ban Protection**
 Human-like behavior prevents blocking:
-- **Random Delays**: 3-8 seconds between messages (configurable)
-- **Typing Indicators**: 2-second typing simulation
-- **Presence Updates**: Keep-alive prevents 24-hour timeout
-- **Rate Limiting**: 30 requests/minute on send endpoint
+- **Paced Sending**: ~3 seconds plus random jitter between campaign messages (configurable)
+- **Additional Gateway Pacing**: optional send-pacing and warm-up controls inside OpenWA
 - **Message Validation**: Ensures proper message format
-- **Phone Number Verification**: Validates before sending
-- **Connection Health Checks**: Monitors connection quality
+- **Phone Number Verification**: Validates numbers against WhatsApp before sending
+- **Connection Health Checks**: Gateway health monitored from the Service Status page
 
-**Message Queue System**
-Enterprise-grade message processing:
-- **Redis-Based Queue (BullMQ)**: Reliable, persistent queue
-- **Queue Statistics Dashboard**: Monitor queue health
-- **Job Status Tracking**: See status of every message
-- **Failed Job Retry**: Automatic retry with exponential backoff
-- **Queue Priority**: High-priority messages first
-- **Bulk Queuing**: Queue thousands of messages instantly
-- **Queue Pause/Resume**: Control message flow
-- **Worker Monitoring**: Track worker processes
-- **Concurrent Processing**: Multiple workers for speed
+**Signed Webhooks & Delivery Tracking**
+Enterprise-grade event processing:
+- **HMAC-SHA256 Signatures**: Every webhook verified before processing
+- **Delivery & Read Receipts**: `message.ack` events flip campaign messages to delivered/read
+- **Failure Reporting**: Failed sends are marked with the gateway's error
+- **Incoming Replies**: `message.received` events feed replies, auto-replies and opt-outs
+- **Retries with Backoff**: OpenWA retries failed webhook deliveries automatically
+- **Idempotency Keys**: Duplicate deliveries are detected and dropped
 
 **Message History & Conversations**
 Track all interactions:
-- **Database Message Storage**: Never lose message history
-- **Conversation List**: See all contacts with recent messages
-- **Message History Per Contact**: Full conversation view
-- **Contact Info Caching**: Names, avatars, status messages
-- **Unread Count Tracking**: Track unread messages
-- **Last Message Display**: See most recent message in list
-- **Profile Picture Fetch**: Automatic contact photo retrieval
-- **Group Chat Support**: Handle group conversations (optional)
+- **Database Reply Storage**: Never lose an inbound reply
+- **Campaign Reply Linking**: Replies matched to the campaign that triggered them
+- **Chat History Access**: Conversation history fetched through the gateway API
 - **Message Type Detection**: Text, Image, Video, Audio, Document, etc.
 
 **Media Message Support**
@@ -349,10 +335,8 @@ More than just text:
 - **Document Messages**: Send PDFs, Word docs, etc.
 - **Audio Messages**: Voice notes and audio files
 - **Video Messages**: Send videos with captions
-- **Media URL Support**: External hosting support
 - **Media Type Validation**: Ensures proper format
 - **Caption Support**: Add context to media messages
-- **PTT (Push-to-Talk)**: Voice note format support
 
 ---
 
@@ -370,20 +354,17 @@ Centralized control of your platform:
 - **Category Organization**: Organized setting groups
 - **Image Optimization**: Automatic image processing
 
-**Provider Settings**
-Configure messaging providers:
-- **BulkSMS Credentials**: Username and password management
-- **Provider Activation**: Enable/disable providers
-- **Default Provider Selection**: Choose primary provider
-- **Balance Tracking**: Monitor account balance
-- **Quota Monitoring**: Track message limits
-- **Last Check Timestamp**: See when balance was updated
-- **Connection Testing**: Verify provider credentials
-- **Balance Refresh**: Update balance on demand
+**OpenWA Connection Settings**
+Configure the WhatsApp gateway via environment:
+- **Gateway URL & API Key**: `OPENWA_BASE_URL` / `OPENWA_API_KEY`
+- **Named Session**: `OPENWA_SESSION_NAME` identifies this installation
+- **Webhook Secret**: `OPENWA_WEBHOOK_SECRET` protects incoming events
+- **Send Pacing**: `OPENWA_SEND_DELAY_MS` controls campaign message spacing
+- **One-Command Setup**: `php artisan openwa:setup` validates and provisions everything
 
 **Service Status Dashboard (Super Admin)**
 Monitor platform health:
-- **WhatsApp Engine Status**: Connection state, uptime
+- **OpenWA Gateway Health**: Reachability, version, session state
 - **Laravel Application Status**: Server health
 - **Database Connectivity**: MySQL/MariaDB connection check
 - **Redis Connectivity**: Cache and queue system check
@@ -477,10 +458,9 @@ Live data without page refreshes:
 - **New Message Notifications**: Instant reply alerts
 - **Reply Count Updates**: Real-time engagement tracking
 - **Status Badge Updates**: Visual status changes
-- **Socket.IO Integration**: WebSocket support ready
 - **Browser Notifications**: Desktop notifications (planned)
 - **Livewire Events**: Reactive UI updates
-- **Polling Fallback**: Works even without WebSockets
+- **Efficient Polling**: Live updates with server-side caching
 
 **Advanced Search & Filtering**
 Find anything, instantly:
@@ -528,7 +508,7 @@ Your data is safe:
 **Rate Limiting & Abuse Prevention**
 Protection against attacks:
 - **API Rate Limiting**: 60 requests/minute default
-- **WhatsApp Engine Rate Limiting**: 30 requests/minute
+- **Paced WhatsApp Sending**: spacing with jitter, plus optional OpenWA gateway pacing
 - **Login Attempt Limiting**: Prevent brute force attacks
 - **Webhook Retry Backoff**: Exponential retry delays
 - **Queue Rate Limiting**: Prevent queue flooding
@@ -553,7 +533,7 @@ Respect privacy, avoid fines:
 **Comprehensive Logging**
 Debug anything, anytime:
 - **Application Logs**: Laravel log facade
-- **WhatsApp Engine Logs**: Winston logger in Node.js
+- **OpenWA Gateway Logs**: Structured logs via Docker (`docker compose logs`)
 - **Error Logs**: Automatic error tracking
 - **Debug Logs**: Detailed debugging information
 - **Info Logs**: General information logging
@@ -584,7 +564,7 @@ From code to production in minutes:
 - **Service Installation Scripts**: Systemd setup included
 - **Systemd Service Config**: Production-ready services
 - **Supervisor Queue Worker Setup**: Background job processing
-- **PM2 Process Management**: Node.js process control
+- **Docker Compose for OpenWA**: Gateway container management
 - **SSL Certificate Automation**: Let's Encrypt integration
 - **Web Server Configs**: Nginx and Apache templates
 - **Backup Scripts**: Automated backup solution
@@ -606,20 +586,17 @@ From code to production in minutes:
 - **Alpine.js 3.x** - Lightweight JavaScript
 - **Livewire 3.x** - Server-side rendering with SPA feel
 - **Chart.js** - Analytics visualization (ready)
-- **Socket.IO Client** - Real-time updates
 
-### WhatsApp Engine Stack
-- **Node.js 18.x+** - JavaScript runtime
-- **Baileys 7.x** - WhatsApp Web API (most stable library)
-- **Express.js** - Web framework
-- **Socket.IO Server** - Real-time communication
-- **BullMQ** - Redis-based queue system
-- **Winston** - Professional logging
-- **Axios** - HTTP client
+### WhatsApp Gateway Stack (OpenWA)
+- **OpenWA** - Open-source, self-hosted WhatsApp API gateway
+- **NestJS / TypeScript** - Modern, typed server framework
+- **whatsapp-web.js or Baileys** - Selectable engine (`ENGINE_TYPE`)
+- **Docker** - Containerized deployment (`docker-compose.openwa.yml`)
+- **REST API + Signed Webhooks** - Server-to-server integration with Laravel
 
 ### Infrastructure
 - **Nginx or Apache** - Web server
-- **PM2** - Node.js process manager
+- **Docker Compose** - OpenWA gateway container
 - **Supervisor** - Laravel queue worker manager
 - **Systemd** - Service management
 - **Let's Encrypt** - Free SSL certificates
@@ -638,7 +615,7 @@ From code to production in minutes:
 
 ### Source Code
 - **Complete Laravel Application**: All PHP code, no encryption
-- **Complete Node.js Engine**: WhatsApp integration code
+- **OpenWA Gateway Setup**: Docker Compose file and provisioning command
 - **All Frontend Assets**: TailwindCSS, Alpine.js, JavaScript
 - **Database Migrations**: Full schema included
 - **Seeders**: Sample data for testing
@@ -651,11 +628,10 @@ From code to production in minutes:
 - **Developer Guide**: Code structure and architecture
 
 ### Configuration Files
-- **Environment Templates**: .env.example for Laravel and Node.js
+- **Environment Templates**: .env.example with OpenWA settings
 - **Web Server Configs**: Nginx and Apache examples
 - **Service Configs**: Systemd and Supervisor templates
-- **PM2 Ecosystem File**: Node.js process config
-- **Docker Compose**: Container orchestration (optional)
+- **Docker Compose**: OpenWA gateway orchestration
 
 ### Scripts
 - **Deployment Scripts**: Automated deployment
@@ -742,7 +718,7 @@ This isn't a side project or proof-of-concept. It's a fully-functional, battle-t
 ### 3. Modern Technology
 Built with the latest, most stable technologies:
 - Laravel 10.x (PHP 8.4)
-- Baileys 7.x (most stable WhatsApp library)
+- OpenWA gateway (whatsapp-web.js or Baileys engine)
 - TailwindCSS 3.x (modern UI)
 - Node.js 18.x+ (LTS)
 - Redis 6.0+ (industry standard)
@@ -783,7 +759,7 @@ Everything you need to succeed:
 ### 8. Active Maintenance
 Recently updated codebase:
 - Latest Laravel version
-- Latest Baileys library
+- Latest OpenWA gateway
 - Security patches applied
 - Bug fixes included
 - Performance optimizations
@@ -938,6 +914,6 @@ Whether you're an entrepreneur looking to enter the WhatsApp messaging market, a
 
 *This platform is actively maintained and recently updated. Purchase includes complete source code, documentation, and installation guides. Optional support and customization available.*
 
-**Last Updated**: November 2025
-**Version**: 1.0 (Based on Laravel 10.x, Baileys 7.x)
+**Last Updated**: August 2026
+**Version**: 2.0 (Based on Laravel 10.x, OpenWA gateway)
 **License**: Available for purchase with various licensing options
